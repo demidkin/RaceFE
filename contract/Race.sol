@@ -1,5 +1,5 @@
 pragma solidity ^0.4.22; // solhint-disable-line
-import "github.com/oraclize/ethereum-api/blob/master/oraclizeAPI.sol";
+import "github.com/oraclize/ethereum-api/oraclizeAPI.sol";
 
 /*
     ContractStatus:
@@ -119,6 +119,14 @@ contract Race is usingOraclize{
         //upgrade 3
         upgradesPower.push(500);
         upgradesPrice.push(20 finney);
+    }
+
+    function getAuctionEndDate() public view returns(uint){
+        return auctionEndDate;
+    }
+
+    function getRaceStartDate() public view returns(uint){
+        return raceStartDate;
     }
 
     function getContractStatus() public view returns(ContractStatus){
