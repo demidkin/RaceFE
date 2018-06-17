@@ -390,7 +390,7 @@ class App extends React.Component {
             }
         ];
 
-        this.contractAddress = "0x52AFe9B949Da82F75B1007e04656EF89fF7e2510";
+        this.contractAddress = "0x5055C5cc1D6Ae1E95E666134B606B949Df12f729";
         const MyContract = web3.eth.contract(abi)
         this.state.ContractInstance = MyContract.at(this.contractAddress)
     }
@@ -816,7 +816,7 @@ class App extends React.Component {
                                 <div class="input-group mb-3">
                                     <input type="text" class="form-control" placeholder="Reward eth" aria-label="Reward eth" aria-describedby="basic-addon2" value={this.web3.fromWei(this.state.reward, 'finney')} onChange={(e) => this.onChangeReward(e)}></input>
                                     <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="button" onClick={() => this.startAuction()} disabled={!this.state.auctionBtnEnabled}>Запустить аукцион</button>
+                                        <button class="btn btn-outline-secondary" type="button" onClick={() => this.startAuction()} disabled={!this.state.ContractStatus === 'Initsialising'}>Запустить аукцион</button>
                                     </div>
                                 </div>
                                 <b>Награда победителю:</b> &nbsp;
