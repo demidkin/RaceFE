@@ -10,7 +10,7 @@ class App extends React.Component {
             RaceStartDate: "01.01.2000 12:00",
             ContractStatus: "0",
             reward: 0,
-            maxCar: 8,
+            maxCar: 3,
             ContractReward: 0,
             auctionBtnEnabled: true,
             pendingReturn: 0,
@@ -19,7 +19,7 @@ class App extends React.Component {
             carUpgrades: [],
             carPowers: [],
             mycars: [],
-            upgradesCount: 0,
+            upgradesCount: 3,
             upgradePrice: []
         }
 
@@ -32,7 +32,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0x9AE2135A03003711B089a7959C5656D6341C38E0";
+        this.contractAddress = "0x57d7c43038a65338D727eaB552becab24aB24B31";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -472,11 +472,12 @@ class App extends React.Component {
         this.setupListeners()
         setInterval(this.updateState.bind(this), 10e2)
     }
-    updateCarUpgradePrice() {
+    updateUpgradesCount(){
         this.state.ContractInstance.getUpgradesCount((err, result) => {
             this.setState({ upgradesCount: parseInt(result) });
         })
-
+    }
+    updateCarUpgradePrice() {
         let upgrPrice = [];
         for (let i = 0; i < this.state.upgradesCount; i++) {
             this.state.ContractInstance.getUpgradesPrice(i,(err, res) => { 
@@ -532,6 +533,9 @@ class App extends React.Component {
                 case 5:
                     this.setState({ ContractStatus: "Stop" })
                     break;
+                case 6:
+                    this.setState({ ContractStatus: "AuctionEnded" })
+                    break;
                 default:
                     this.setState({ ContractStatus: "Status unknow" })
             }
@@ -586,7 +590,7 @@ class App extends React.Component {
 
     updateHighestBids() {
         let BIDS = this.state.highestBids;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < this.state.maxCar; i++) {
             this.state.ContractInstance.gethighestBid(i, (err, result) => {
                 BIDS[i] = this.web3.fromWei(parseInt(result), 'ether');
             })
@@ -608,9 +612,20 @@ class App extends React.Component {
             )
         }
     }
+    onClickAuctionEnd = () => {
+        this.state.ContractInstance.auctionEnd((err) => {
+            console.log(err)
+        })
+    }
+
+    onClickRace = () => {
+        this.state.ContractInstance.race((err) => {
+            console.log(err)
+        }) 
+    }
     updateCarOwnerStatus() {
         let owners = this.state.mycars;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < this.state.maxCar; i++) {
             this.state.ContractInstance.myBidIsWin(i, (err, result) => {
                 owners[i] = result;
             })
@@ -620,7 +635,7 @@ class App extends React.Component {
     updateCarUpgradesAndPower() {
         let upgrads = this.state.carUpgrades;
         let powers = this.state.carPowers;
-        for (let i = 0; i < 8; i++) {
+        for (let i = 0; i < this.state.maxCar; i++) {
             this.state.ContractInstance.getCarPower(i, (err, result) => {
                 powers[i] = parseInt(result);
             })
@@ -668,6 +683,7 @@ class App extends React.Component {
         this.updateCarUpgradePrice();
         this.updateRewardValue();
         this.updatePandingReturnValue();
+        this.updateUpgradesCount();
     }
 
     setupListeners() {
@@ -691,16 +707,16 @@ class App extends React.Component {
                         <Car carIndex="0" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="1" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="2" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="3" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        {/* <Car carIndex="3" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="4" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="5" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="6" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="7" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                         <Car carIndex="8" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="9" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="9" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/> */}
                     </div>
                     <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
-                        <RaceSettings data={this.state} fromWei={this.fromWei} onClickStartAuction={this.startAuction} onClickCancelAuction={this.auctionCancel} setReward={this.onChangeReward} setContractAddress={this.setContractAddress}/>
+                        <RaceSettings data={this.state} fromWei={this.fromWei} onClickStartAuction={this.startAuction} onClickCancelAuction={this.auctionCancel} setReward={this.onChangeReward} setContractAddress={this.setContractAddress} onClickAuctionEnd={this.onClickAuctionEnd} onClickRace={this.onClickRace}/>
                     </div>
                 </div>
             </div>
@@ -724,7 +740,7 @@ class RaceInfo extends React.Component {
                         <span>{this.props.fromWei(this.props.data.ContractReward, 'ether')}</span><br />
                         <b>Ваш невыплаченный баланс:</b>&nbsp;
                         <span>{this.props.fromWei(this.props.data.pendingReturn, 'ether')}</span> &nbsp;
-                        <button class="btn btn-warning" type="button" onClick={() => this.props.onClick} disabled={this.props.data.pendingReturn === 0}>Забрать средства</button>
+                        <button class="btn btn-warning" type="button" onClick={() => this.props.onClick()} disabled={this.props.data.pendingReturn === 0}>Забрать средства</button>
                     </div>
                 </div>
         )}
@@ -746,6 +762,10 @@ class RaceSettings extends React.Component {
                 <span>{this.props.fromWei(this.props.data.reward, 'ether')}</span>
                 <br />
                 <button class="btn btn-danger btn-block" type="button" onClick={() => this.props.onClickCancelAuction()} disabled={!(this.props.data.ContractStatus === 'AuctionFault')}>Отменить аукцион</button>
+                <br />
+                <button class="btn btn-success btn-block" type="button" onClick={() => this.props.onClickAuctionEnd()} disabled={!(this.props.data.ContractStatus === 'AuctionEnded')}>Завершить аукцион</button>
+                <br />
+                <button class="btn btn-warning btn-block" type="button" onClick={() => this.props.onClickRace()} disabled={!(this.props.data.ContractStatus === 'RaceIsOver')}>Гонка!</button>
                 <br />
                 <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#changeContractAddressModal">
                     Сменить адрес контракта
