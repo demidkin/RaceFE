@@ -10,13 +10,15 @@ class App extends React.Component {
             RaceStartDate: "01.01.2000 12:00",
             ContractStatus: "0",
             reward: 0,
+            maxCar: 8,
+            ContractReward: 0,
             auctionBtnEnabled: true,
             pendingReturn: 0,
-            highestBids: [0, 0, 0, 0, 0, 0, 0, 0],
-            myBids: [0, 0, 0, 0, 0, 0, 0, 0],
-            carUpgrades: [0, 0, 0, 0, 0, 0, 0, 0],
-            carPowers: [0, 0, 0, 0, 0, 0, 0, 0],
-            mycars: [false, false, false, false, false, false, false, false],
+            highestBids: [],
+            myBids: [],
+            carUpgrades: [],
+            carPowers: [],
+            mycars: [],
             upgradesCount: 0,
             upgradePrice: []
         }
@@ -30,7 +32,40 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        var abi = [
+        this.contractAddress = "0x9AE2135A03003711B089a7959C5656D6341C38E0";
+        const MyContract = web3.eth.contract(this.getAbi())
+        this.state.ContractInstance = MyContract.at(this.contractAddress)
+
+
+        let hb = []
+        let mb = []
+        let cu = []
+        let cp = []
+        let mc = []
+        for (let i = 0; i < this.state.maxCar; i++){
+            hb.push(0)
+            mb.push(0)
+            cu.push(0)
+            cp.push(0)
+            mc.push(false)
+        }
+        this.setState({highestBids: hb})
+        this.setState({myBids: mb})
+        this.setState({carUpgrades: cu})
+        this.setState({carPowers: cp})
+        this.setState({mycars: mc})
+
+        
+
+    }
+    getAbi(){
+        let abi = [
+            {
+                "anonymous": false,
+                "inputs": [],
+                "name": "AuctionCanceled",
+                "type": "event"
+            },
             {
                 "constant": false,
                 "inputs": [
@@ -122,29 +157,6 @@ class App extends React.Component {
                 "type": "function"
             },
             {
-                "inputs": [
-                    {
-                        "name": "_beneficiary",
-                        "type": "address"
-                    },
-                    {
-                        "name": "_auctionEndDate",
-                        "type": "uint256"
-                    },
-                    {
-                        "name": "_raceStartDate",
-                        "type": "uint256"
-                    },
-                    {
-                        "name": "_maxCar",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
                 "anonymous": false,
                 "inputs": [
                     {
@@ -185,12 +197,6 @@ class App extends React.Component {
                 "type": "event"
             },
             {
-                "anonymous": false,
-                "inputs": [],
-                "name": "AuctionCanceled",
-                "type": "event"
-            },
-            {
                 "constant": false,
                 "inputs": [
                     {
@@ -203,6 +209,29 @@ class App extends React.Component {
                 "payable": true,
                 "stateMutability": "payable",
                 "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "name": "_beneficiary",
+                        "type": "address"
+                    },
+                    {
+                        "name": "_auctionEndDate",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "_raceStartDate",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "_maxCar",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "constructor"
             },
             {
                 "constant": false,
@@ -306,7 +335,35 @@ class App extends React.Component {
             {
                 "constant": true,
                 "inputs": [],
+                "name": "getPandingReturnValue",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
                 "name": "getRaceStartDate",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getRewardValue",
                 "outputs": [
                     {
                         "name": "",
@@ -340,6 +397,20 @@ class App extends React.Component {
                     }
                 ],
                 "name": "getUpgradesPrice",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getWinner",
                 "outputs": [
                     {
                         "name": "",
@@ -388,11 +459,12 @@ class App extends React.Component {
                 "stateMutability": "view",
                 "type": "function"
             }
-        ];
+        ]
+        return abi
+    }
 
-        this.contractAddress = "0x5055C5cc1D6Ae1E95E666134B606B949Df12f729";
-        const MyContract = web3.eth.contract(abi)
-        this.state.ContractInstance = MyContract.at(this.contractAddress)
+    fromWei = (value) => {
+        return (this.web3.fromWei(value, 'ether') + ' eth')
     }
 
     componentDidMount() {
@@ -413,6 +485,15 @@ class App extends React.Component {
         }
         this.setState({ upgradePrice: upgrPrice })
     }
+    setContractAddress = (address) => {
+        let NewContract = window.web3.eth.contract(this.getAbi())
+        let contract = NewContract.at(address)
+        console.log(contract)
+        if (contract !== null){
+            this.state.ContractInstance = contract;
+            this.contractAddress = address;
+        }
+    }
 
     upgradeCar(index){
         if (this.state.upgradePrice.length > 0){
@@ -431,7 +512,7 @@ class App extends React.Component {
     }
     updateContractStatus() {
         this.state.ContractInstance.getContractStatus((err, result) => {
-            console.log("ContractStatus: " + parseInt(result));
+            //console.log("ContractStatus: " + parseInt(result));
             switch (parseInt(result)) {
                 case 0:
                     this.setState({ ContractStatus: "Initsialising" })
@@ -470,11 +551,11 @@ class App extends React.Component {
             this.setState({ RaceStartDate: date.toLocaleString() })
         })
     }
-    onChangeReward(e) {
+    onChangeReward = (e) => {
         this.setState({ reward: this.web3.toWei(parseFloat(e.target.value), 'finney') })
     }
 
-    startAuction() {
+    startAuction = () => {
         var functionData = this.state.ContractInstance.auctionStart.getData();
         this.web3.eth.sendTransaction({
             to: this.contractAddress,
@@ -496,7 +577,7 @@ class App extends React.Component {
         //     this.setState({ pendingReturn: this.web3.fromWei(parceInt(result),'ether')})
         // })
     }
-    withdraw() {
+    withdraw = () => {
         this.state.ContractInstance.withdraw((err, result) => {
             console.log(result);
             console.log(err);
@@ -512,7 +593,7 @@ class App extends React.Component {
         }
         this.setState({ highestBids: BIDS });
     }
-    bid(index) {
+    bid = (index) => {
         if (this.state.highestBids[index] < this.state.myBids[index]) {
             var functionData = this.state.ContractInstance.bid.getData(index);
             this.web3.eth.sendTransaction({
@@ -536,22 +617,6 @@ class App extends React.Component {
         }
         this.setState({ mycars: owners });
     }
-    updateCarInfo() {
-        for (let i = 0; i < 8; i++) {
-            if (this.state.mycars[i]) {
-                let card = document.getElementById('cardCar' + i);
-                card.className = 'card text-white bg-success mb-3';
-                let text = document.getElementById('car' + i + 'OwnerText');
-                text.innerHTML = 'Да';
-            }
-            else {
-                let card = document.getElementById('cardCar' + i);
-                card.className = 'card text-white bg-info mb-3';
-                let text = document.getElementById('car' + i + 'OwnerText');
-                text.innerHTML = 'Нет';
-            }
-        }
-    }
     updateCarUpgradesAndPower() {
         let upgrads = this.state.carUpgrades;
         let powers = this.state.carPowers;
@@ -566,12 +631,30 @@ class App extends React.Component {
         this.setState({ carUpgrades: upgrads });
         this.setState({ carPowers: powers });
     }
-    onChangeMyBids(e, index) {
+    onChangeMyBids = (e, index) => {
         let BIDS = this.state.myBids;
         BIDS[index] = this.web3.toWei(e.target.value, 'finney');
         this.setState({ myBids: BIDS });
     }
+    updateRewardValue(){
+        this.state.ContractInstance.getRewardValue((err, result) => {
+            
+            this.setState({ ContractReward: parseInt(result)})
+        })
+    }
+    updatePandingReturnValue(){
+        this.state.ContractInstance.getPandingReturnValue((err, result) => {
+            
+            this.setState({ pendingReturn: parseInt(result)})
+        })
+    }
 
+    auctionCancel = () => {
+        this.state.ContractInstance.auctionCancel((err) => {
+            
+            console.log(err);
+        })
+    }
 
     updateState() {
         this.updateContractStatus();
@@ -579,11 +662,12 @@ class App extends React.Component {
         this.updateDateStartRace();
         this.auctionBtnStatus();
         this.updatePandingReturnValue();
-        this.updateCarInfo();
         this.updateHighestBids();
         this.updateCarOwnerStatus();
         this.updateCarUpgradesAndPower();
         this.updateCarUpgradePrice();
+        this.updateRewardValue();
+        this.updatePandingReturnValue();
     }
 
     setupListeners() {
@@ -593,240 +677,30 @@ class App extends React.Component {
         return (
             <div class="container">
                 <br />
-                <b>Статус контракта:</b> &nbsp;
-                <span>{this.state.ContractStatus}</span>
+                <RaceInfo data={this.state} fromWei={this.fromWei} onClick={this.withdraw}/>
                 <br />
-                <b>Дата завершения аукциона:</b> &nbsp;
-                <span>{this.state.AuctionEndDate}</span>
-                <br />
-                <b>Дата начала соревнований:</b> &nbsp;
-                <span>{this.state.RaceStartDate}</span><br />
-                <b>Награда победителю:</b> &nbsp;
-                <span>{this.web3.fromWei(this.state.reward, 'ether')} eth</span><br />
-                <b>Ваш невыплаченный баланс:</b> &nbsp;
-                <span>{this.web3.fromWei(this.state.pendingReturn, 'ether')} eth</span>
-                <br />
-                <br />
-                <div class="row">
-                    <div class="col-3">
-                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-                            <a class="nav-link active" id="v-pills-auction-tab" data-toggle="pill" href="#v-pills-auction" role="tab" aria-controls="v-pills-auction" aria-selected="true">Auction</a>
-                            <a class="nav-link" id="v-pills-settings-tab" data-toggle="pill" href="#v-pills-settings" role="tab" aria-controls="v-pills-settings" aria-selected="false">Settings</a>
-                        </div>
+                <nav>
+                    <div class="nav nav-tabs" id="nav-tab" role="tablist">
+                        <a class="nav-item nav-link active" id="nav-auction-tab" data-toggle="tab" href="#nav-auction" role="tab" aria-controls="nav-auction" aria-selected="true">Auction</a>
+                        <a class="nav-item nav-link" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
                     </div>
-                    <div class="col-9">
-                        <div class="tab-content" id="v-pills-tabContent">
-                            <div class="tab-pane fade show active" id="v-pills-auction" role="tabpanel" aria-labelledby="v-pills-auction-tab">
-                                <div class="card text-white bg-info mb-3" id="cardCar0">
-                                    <div class="card-header">Car #1</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>01</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[0] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[0]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[0]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car0OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 0)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(0)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[0], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(0)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar1">
-                                    <div class="card-header">Car #2</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>02</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[1] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[1]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[1]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car1OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 1)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(1)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[1], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(1)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar2">
-                                    <div class="card-header">Car #3</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>03</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[2] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[2]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[2]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car2OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 2)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(2)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[2], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(2)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar3">
-                                    <div class="card-header">Car #4</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>04</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[3] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[3]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[3]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car3OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 3)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(3)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[3], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(3)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar4">
-                                    <div class="card-header">Car #5</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>05</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[4] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[4]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[4]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car4OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 4)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(4)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[4], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(4)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar5">
-                                    <div class="card-header">Car #6</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>06</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[5] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[5]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[5]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car5OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 5)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(5)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[5], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(5)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar6">
-                                    <div class="card-header">Car #7</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>07</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[6] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[6]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[6]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car6OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 6)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(6)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[6], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(6)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-                                <div class="card text-white bg-info mb-3" id="cardCar7">
-                                    <div class="card-header">Car #8</div>
-                                    <div class="card-body">
-                                        <b>Номер: </b>&nbsp;
-                                        <span>08</span><br />
-                                        <b>Мощьность автомобиля: </b>&nbsp;
-                                        <span>{this.state.carPowers[7] / 100} л\с</span><br />
-                                        <b>Текущая стоимость: </b>&nbsp;
-                                        <span>{this.state.highestBids[7]} eth</span><br />
-                                        <b>Уровень апгрейдов: </b>&nbsp;
-                                        <span>{this.state.carUpgrades[7]} lvl</span><br />
-                                        <b>Ваша ставка выйграла: </b>&nbsp;
-                                        <span id="car7OwnerText">Да</span><br /><br />
-                                        <div class="input-group mb-3">
-                                            <input type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.onChangeMyBids(e, 7)}></input>
-                                            <div class="input-group-append">
-                                                <button class="btn btn-dark" type="button" onClick={() => this.bid(7)} disabled={!(this.state.ContractStatus == 'Auction')}>Сделать ставку</button>
-                                            </div>
-                                        </div>
-                                        <b>Ставка: </b> &nbsp;
-                                        <span>{this.web3.fromWei(this.state.myBids[7], 'ether')} eth</span>
-                                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.upgradeCar(7)} disabled={!(this.state.ContractStatus == 'PreparationForTheRace')}>Улучшить автомобиль</button>
-                                    </div>
-                                </div>
-
-                            </div>
-                            <div class="tab-pane fade" id="v-pills-settings" role="tabpanel" aria-labelledby="v-pills-settings-tab">
-                                <b>Награда победителю (finney):</b> &nbsp;
-                                <div class="input-group mb-3">
-                                    <input type="text" class="form-control" placeholder="Reward eth" aria-label="Reward eth" aria-describedby="basic-addon2" value={this.web3.fromWei(this.state.reward, 'finney')} onChange={(e) => this.onChangeReward(e)}></input>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="button" onClick={() => this.startAuction()} disabled={!this.state.ContractStatus === 'Initsialising'}>Запустить аукцион</button>
-                                    </div>
-                                </div>
-                                <b>Награда победителю:</b> &nbsp;
-                                <span>{this.web3.fromWei(this.state.reward, 'ether')} eth</span>
-                                <br /><br />
-                                <b>Невыплаченный баланс:</b> &nbsp;
-                                <span>{this.web3.fromWei(this.state.pendingReturn, 'ether')} eth</span>
-                                <button class="btn btn-outline-secondary btn-block" type="button" onClick={() => this.withdraw()} disabled={this.state.pendingReturn === 0}>Забрать средства</button>
-                            </div>
-                        </div>
+                </nav>
+                <div class="tab-content" id="nav-tabContent">
+                    <div class="tab-pane fade show active" id="nav-auction" role="tabpanel" aria-labelledby="nav-auction-tab">
+                        <br />
+                        <Car carIndex="0" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="1" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="2" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="3" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="4" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="5" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="6" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="7" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="8" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                        <Car carIndex="9" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
+                    </div>
+                    <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
+                        <RaceSettings data={this.state} fromWei={this.fromWei} onClickStartAuction={this.startAuction} onClickCancelAuction={this.auctionCancel} setReward={this.onChangeReward} setContractAddress={this.setContractAddress}/>
                     </div>
                 </div>
             </div>
@@ -834,51 +708,126 @@ class App extends React.Component {
     }
 }
 
-class Table extends React.Component {
+class RaceInfo extends React.Component {
     render() {
         return (
-            <table class="table table-hover">
-                <thead>
-                    {this.genHead()}
-                </thead>
-                <tbody>
-                    {this.genRow()}
-                </tbody>
-            </table>
+                <div class="card text-white bg-dark mb-3">
+                    <div class="card-header">RACE</div>
+                    <div class="card-body">
+                        <b>Статус контракта:</b>&nbsp;
+                        <span>{this.props.data.ContractStatus}</span><br />
+                        <b>Дата завершения аукциона:</b> &nbsp;
+                        <span>{this.props.data.AuctionEndDate}</span><br />
+                        <b>Дата начала соревнований:</b> &nbsp;
+                        <span>{this.props.data.RaceStartDate}</span><br />
+                        <b>Награда победителю:</b>&nbsp;
+                        <span>{this.props.fromWei(this.props.data.ContractReward, 'ether')}</span><br />
+                        <b>Ваш невыплаченный баланс:</b>&nbsp;
+                        <span>{this.props.fromWei(this.props.data.pendingReturn, 'ether')}</span> &nbsp;
+                        <button class="btn btn-warning" type="button" onClick={() => this.props.onClick} disabled={this.props.data.pendingReturn === 0}>Забрать средства</button>
+                    </div>
+                </div>
+        )}
+}
+
+class RaceSettings extends React.Component {
+    render() {
+        return (
+            <div>
+                <br />
+                <b>Награда победителю (finney):</b> &nbsp;
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" placeholder="Reward eth" aria-label="Reward eth" aria-describedby="basic-addon2" onChange={(e) => {this.props.setReward(e)}}></input>
+                    <div class="input-group-append">
+                        <button class="btn btn-success btn-block" type="button" onClick={() => this.props.onClickStartAuction()} disabled={!(this.props.data.ContractStatus === 'Initsialising')}>Запустить аукцион</button>
+                    </div>
+                </div>
+                <b>Награда победителю:</b> &nbsp;
+                <span>{this.props.fromWei(this.props.data.reward, 'ether')}</span>
+                <br />
+                <button class="btn btn-danger btn-block" type="button" onClick={() => this.props.onClickCancelAuction()} disabled={!(this.props.data.ContractStatus === 'AuctionFault')}>Отменить аукцион</button>
+                <br />
+                <button type="button" class="btn btn-primary btn-block" data-toggle="modal" data-target="#changeContractAddressModal">
+                    Сменить адрес контракта
+                </button>
+                <ChangeContractAdress setContractAddress={this.props.setContractAddress}/>
+            </div>
+        )}
+
+}
+    
+class ChangeContractAdress extends React.Component {
+    constructor(prop) {
+        super(prop)
+        this.state = {
+            contractAddress: ""
+        }
+    }
+    render() {
+        return (
+                <div class="modal fade" id="changeContractAddressModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Смена адреса контракта</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" class="form-control" placeholder="Contract address" aria-label="Contract address" aria-describedby="basic-addon2" onChange={(e) => {this.setState({contractAddress: e.target.value})}}></input>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Закрыть</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onClick={() => this.props.setContractAddress(this.state.contractAddress)}>Сохранить изменения</button>
+                    </div>
+                    </div>
+                </div>
+                </div>  
+        )}
+
+}
+
+class Car extends React.Component {
+    
+    bidIsWin(){
+        if (this.props.data.mycars[this.props.carIndex]) return "Да"
+        else return "Нет"
+    }    
+    getCardStatus(){
+        if (this.props.data.mycars[this.props.carIndex]) return "bg-success"
+        else return "bg-secondary" 
+    }
+
+    render(){
+        return (
+                <div class={"card text-white mb-3 " + this.getCardStatus()}>
+                    <div class="card-header">Car #{parseInt(this.props.carIndex)+1}</div>
+                    <div class="card-body">
+                        <b>Номер: </b>&nbsp;
+                        <span>{parseInt(this.props.carIndex)+1}</span><br />
+                        <b>Мощьность автомобиля: </b>&nbsp;
+                        <span>{this.props.data.carPowers[this.props.carIndex] / 100} л\с</span><br />
+                        <b>Текущая стоимость: </b>&nbsp;
+                        <span>{this.props.data.highestBids[this.props.carIndex]} eth</span><br />
+                        <b>Уровень апгрейдов: </b>&nbsp;
+                        <span>{this.props.data.carUpgrades[this.props.carIndex]} lvl</span><br />
+                        <b>Ваша ставка выйграла: </b>&nbsp;
+                        <span>{this.bidIsWin()}</span><br /><br />
+                        <div class="input-group mb-3">
+                            <input id={"bidInputId" + this.props.carIndex} type="text" class="form-control" placeholder="Bid fynney" aria-label="Bid fynney" aria-describedby="basic-addon2" onChange={(e) => this.props.setBid(e,this.props.carIndex)}></input>
+                            <div class="input-group-append">
+                                <button id={"bidBtnId" + this.props.carIndex} class="btn btn-dark" type="button" onClick={() => this.props.onClickBid(this.props.carIndex)} disabled={!(this.props.data.ContractStatus === 'Auction')}>Сделать ставку</button>
+                            </div>
+                        </div>
+                        <b>Ставка: </b> &nbsp;
+                        <span>{this.props.fromWei(this.props.data.myBids[this.props.carIndex])}</span>
+                        <button class="btn btn-dark btn-block" type="button" onClick={() => this.props.onClickUpgrade(this.props.carIndex)} disabled={!(this.props.data.ContractStatus === 'PreparationForTheRace')}>Улучшить автомобиль</button>
+                    </div>
+                </div>
         );
     }
-
-    genHead() {
-        var head = this.props.head;
-
-        return head.map(function (v, i) {
-            return (
-                <th key={'th' + i} scope="col">
-                    {v}
-                </th>
-            );
-        });
-    }
-
-    genRow() {
-        var rows = this.props.rows;
-
-        return rows.map(function (v, i) {
-            var tmp = v.map(function (v2, j) {
-                return (
-                    <td key={'td' + i + '_' + j}>
-                        {v2}
-                    </td>
-                );
-            });
-
-            return (
-                <tr key={'tr' + i}>
-                    {tmp}
-                </tr>
-            )
-        });
-    }
 }
+
 
 export default App;
