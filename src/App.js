@@ -20,7 +20,8 @@ class App extends React.Component {
             carPowers: [],
             mycars: [],
             upgradesCount: 3,
-            upgradePrice: []
+            upgradePrice: [],
+            winner: 1000
         }
 
         let web3 = window.web3
@@ -670,7 +671,11 @@ class App extends React.Component {
             console.log(err);
         })
     }
-
+    getWinner(){
+        this.state.ContractInstance.getWinner((err, result) => {
+            this.setState({winner : parseInt(result)})
+        })
+    }
     updateState() {
         this.updateContractStatus();
         this.updateDateAuction();
@@ -684,6 +689,7 @@ class App extends React.Component {
         this.updateRewardValue();
         this.updatePandingReturnValue();
         this.updateUpgradesCount();
+        this.getWinner();
     }
 
     setupListeners() {
@@ -815,7 +821,10 @@ class Car extends React.Component {
         else return "Нет"
     }    
     getCardStatus(){
-        if (this.props.data.mycars[this.props.carIndex]) return "bg-success"
+        //console.log(this.props.carIndex)
+        //console.log(this.props.data.winner)
+        if (this.props.carIndex == this.props.data.winner ) return "bg-danger"
+        else if (this.props.data.mycars[this.props.carIndex]) return "bg-success"
         else return "bg-secondary" 
     }
 
