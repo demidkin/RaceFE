@@ -7,7 +7,6 @@ class App extends React.Component {
     constructor(prop) {
         super(prop)
         this.state = {
-            //web3: null,
             AuctionEndDate: "01.01.2000 10:00",
             RaceStartDate: "01.01.2000 12:00",
             ContractStatus: "100",
@@ -25,7 +24,6 @@ class App extends React.Component {
             upgradePrice: [],
             winner: 1000
         }
-        //this.setWeb3 = this.setWeb3.bind(this);
 
         let web3 = window.web3
         if (typeof window.web3 != 'undefined') {
@@ -36,7 +34,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0xf70766Aea5fC51f4019655c789F86A4849f7C421";
+        this.contractAddress = "0xCdeA89ae3c68d357a3179fBaa45DBfE0Da87959e";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -50,9 +48,6 @@ class App extends React.Component {
 
     }
 
-    // setWeb3(web3) {
-    //     this.setState({web3});
-    // }
     updateMaxCarValue(){
         this.state.ContractInstance.getMaxCarValue((err, result) => {
             this.setState({ maxCar: parseInt(result) });
@@ -74,7 +69,6 @@ class App extends React.Component {
             this.setState({carUpgrades: cu})
             this.setState({carPowers: cp})
             this.setState({mycars: mc})
-
         })      
     }
     getAbi(){
@@ -520,14 +514,18 @@ class App extends React.Component {
     componentDidMount() {
         this.updateState()
         this.setupListeners()
-        setInterval(this.updateState.bind(this), 10e2)
+        setInterval(this.updateState.bind(this), 10e3)
     }
+
     updateUpgradesCount(){
-        this.state.ContractInstance.getUpgradesCount((err, result) => {
-            this.setState({ upgradesCount: parseInt(result) });
-            this.updateCarUpgradePrice();
+        this.state.ContractInstance.getUpgradesCount((err, result) => {  
+
+            this.setState({ upgradesCount: parseInt(result)})
+            //this.updateCarUpgradePrice();
+            
         })
     }
+
     updateCarUpgradePrice() {
         let upgrPrice = [];
         for (let i = 0; i < this.state.upgradesCount; i++) {
@@ -536,6 +534,7 @@ class App extends React.Component {
             })
         }
         this.setState({ upgradePrice: upgrPrice })
+        console.log(this.state.upgradePrice)
     }
     setContractAddress = (address) => {
         let NewContract = window.web3.eth.contract(this.getAbi())
@@ -552,14 +551,39 @@ class App extends React.Component {
         this.updateMaxCarValue();
     }
 
-    upgradeCar(index){
+    upgradeCar = (index) => {
+        console.log(this.state.carUpgrades[index])
+        console.log(this.state.upgradePrice[this.state.carUpgrades[index]])
+        console.log(this.state.upgradePrice[this.state.carUpgrades[index]+1])
+        console.log(this.state.upgradePrice[this.state.carUpgrades[index]+2])
+        if (index < this.state.upgradesCount)
+            if (this.state.carUpgrades[index] < this.state.upgradesCount)
+            {
+                this.state.ContractInstance.getUpgradesPrice(index,(err, res) => { 
+                    let price = parseInt(res);
+
+                    var functionData = this.state.ContractInstance.upgradeCar.getData(index);
+                    this.web3.eth.sendTransaction({
+                        to: this.contractAddress,
+                        from: this.web3.eth.accounts[0],
+                        data: functionData,
+                        value: price
+                    },
+                        function (error) {
+                            console.log(error);
+                        }
+                    )                
+
+                })
+            }
+
         if (this.state.upgradePrice.length > 0){
             var functionData = this.state.ContractInstance.upgradeCar.getData(index);
             this.web3.eth.sendTransaction({
                 to: this.contractAddress,
                 from: this.web3.eth.accounts[0],
                 data: functionData,
-                value: this.state.upgradePrice[this.state.carUpgrades[index]]
+                value: this.state.upgradePrice[this.state.carUpgrades[index]+1]
             },
                 function (error) {
                     console.log(error);
@@ -729,6 +753,9 @@ class App extends React.Component {
         })
     }
     updateState() {
+        //console.log(this.state.upgradePrice)
+        //console.log(this.upgradePrice)
+        //console.log(this.upgradesCount)
         this.updateContractStatus();
         this.updatePandingReturnValue();
         this.updateHighestBids();
@@ -736,6 +763,7 @@ class App extends React.Component {
         this.updateCarUpgradesAndPower();
         this.updateRewardValue();
         this.getWinner();
+        //this.updateUpgradesCount();
     }
 
     setupListeners() {
@@ -746,7 +774,7 @@ class App extends React.Component {
             <div class="container">
                 {/* <MetaMask {...this.props} {...this.state} setWeb3={this.setWeb3}/> */}
                 <br />
-                <RaceInfo data={this.state} fromWei={this.fromWei} onClick={this.withdraw}/>
+                <RaceInfo data={this.state} fromWei={this.fromWei} onClick={this.withdraw} contractAddress={this.contractAddress}/>
                 <br />
                 <nav>
                     <div class="nav nav-tabs" id="nav-tab" role="tablist">
@@ -772,10 +800,10 @@ class RaceInfo extends React.Component {
     render() {
         return (
                 <div class="card text-white bg-dark mb-3">
-                    <div class="card-header">RACE</div>
+                    <div class="card-header">RACE <a href={"https://rinkeby.etherscan.io/address/"+this.props.contractAddress}>(Etherscan)</a></div>
                     <div class="card-body">
                         <b>Статус контракта:</b>&nbsp;
-                        <span>{this.props.data.ContractStatus}</span><br />
+                        <span>{this.props.data.ContractStatus}</span> <br />
                         <b>Дата завершения аукциона:</b> &nbsp;
                         <span>{this.props.data.AuctionEndDate}</span><br />
                         <b>Дата начала соревнований:</b> &nbsp;
