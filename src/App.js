@@ -1,16 +1,18 @@
 import React, { Component } from 'react';
 import Web3 from 'web3';
+//import {MetaMask} from './MetaMask';
 
 class App extends React.Component {
 
     constructor(prop) {
         super(prop)
         this.state = {
+            //web3: null,
             AuctionEndDate: "01.01.2000 10:00",
             RaceStartDate: "01.01.2000 12:00",
-            ContractStatus: "0",
+            ContractStatus: "100",
             reward: 0,
-            maxCar: 3,
+            maxCar: 0,
             ContractReward: 0,
             auctionBtnEnabled: true,
             pendingReturn: 0,
@@ -19,10 +21,11 @@ class App extends React.Component {
             carUpgrades: [],
             carPowers: [],
             mycars: [],
-            upgradesCount: 3,
+            upgradesCount: 0,
             upgradePrice: [],
             winner: 1000
         }
+        //this.setWeb3 = this.setWeb3.bind(this);
 
         let web3 = window.web3
         if (typeof window.web3 != 'undefined') {
@@ -33,38 +36,64 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0x57d7c43038a65338D727eaB552becab24aB24B31";
+        this.contractAddress = "0xf70766Aea5fC51f4019655c789F86A4849f7C421";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
 
-        let hb = []
-        let mb = []
-        let cu = []
-        let cp = []
-        let mc = []
-        for (let i = 0; i < this.state.maxCar; i++){
-            hb.push(0)
-            mb.push(0)
-            cu.push(0)
-            cp.push(0)
-            mc.push(false)
-        }
-        this.setState({highestBids: hb})
-        this.setState({myBids: mb})
-        this.setState({carUpgrades: cu})
-        this.setState({carPowers: cp})
-        this.setState({mycars: mc})
 
-        
 
+        this.updateDateAuction();
+        this.updateDateStartRace();
+        this.updateMaxCarValue();
+        this.updateUpgradesCount();
+
+    }
+
+    // setWeb3(web3) {
+    //     this.setState({web3});
+    // }
+    updateMaxCarValue(){
+        this.state.ContractInstance.getMaxCarValue((err, result) => {
+            this.setState({ maxCar: parseInt(result) });
+
+            let hb = []
+            let mb = []
+            let cu = []
+            let cp = []
+            let mc = []
+            for (let i = 0; i < this.state.maxCar; i++){
+                hb.push(0)
+                mb.push(0)
+                cu.push(0)
+                cp.push(0)
+                mc.push(false)
+            }
+            this.setState({highestBids: hb})
+            this.setState({myBids: mb})
+            this.setState({carUpgrades: cu})
+            this.setState({carPowers: cp})
+            this.setState({mycars: mc})
+
+        })      
     }
     getAbi(){
         let abi = [
             {
                 "anonymous": false,
-                "inputs": [],
-                "name": "AuctionCanceled",
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "winner",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "random",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "Winer",
                 "type": "event"
             },
             {
@@ -149,33 +178,6 @@ class App extends React.Component {
                 "type": "function"
             },
             {
-                "constant": false,
-                "inputs": [],
-                "name": "race",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "reward",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "AuctionStarted",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [],
-                "name": "AuctionEnded",
-                "type": "event"
-            },
-            {
                 "anonymous": false,
                 "inputs": [
                     {
@@ -195,6 +197,39 @@ class App extends React.Component {
                     }
                 ],
                 "name": "HighestBidIncreased",
+                "type": "event"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "race",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "anonymous": false,
+                "inputs": [],
+                "name": "AuctionCanceled",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "reward",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "AuctionStarted",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [],
+                "name": "AuctionEnded",
                 "type": "event"
             },
             {
@@ -323,6 +358,20 @@ class App extends React.Component {
                     }
                 ],
                 "name": "gethighestBid",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getMaxCarValue",
                 "outputs": [
                     {
                         "name": "",
@@ -476,6 +525,7 @@ class App extends React.Component {
     updateUpgradesCount(){
         this.state.ContractInstance.getUpgradesCount((err, result) => {
             this.setState({ upgradesCount: parseInt(result) });
+            this.updateCarUpgradePrice();
         })
     }
     updateCarUpgradePrice() {
@@ -495,6 +545,11 @@ class App extends React.Component {
             this.state.ContractInstance = contract;
             this.contractAddress = address;
         }
+
+        this.updateDateAuction();
+        this.updateDateStartRace();
+        this.updateUpgradesCount();
+        this.updateMaxCarValue();
     }
 
     upgradeCar(index){
@@ -573,10 +628,7 @@ class App extends React.Component {
             }
         )
     }
-    auctionBtnStatus() {
-        if (this.ContractStatus === 'Initsialising') this.setState({ auctionBtnEnabled: true });
-        this.setState({ auctionBtnEnabled: false });
-    }
+
     updatePandingReturnValue() {
         // this.state.ContractInstance.getPandingReturnValue((err, result) => {
         //     this.setState({ pendingReturn: this.web3.fromWei(parceInt(result),'ether')})
@@ -678,17 +730,11 @@ class App extends React.Component {
     }
     updateState() {
         this.updateContractStatus();
-        this.updateDateAuction();
-        this.updateDateStartRace();
-        this.auctionBtnStatus();
         this.updatePandingReturnValue();
         this.updateHighestBids();
         this.updateCarOwnerStatus();
         this.updateCarUpgradesAndPower();
-        this.updateCarUpgradePrice();
         this.updateRewardValue();
-        this.updatePandingReturnValue();
-        this.updateUpgradesCount();
         this.getWinner();
     }
 
@@ -698,6 +744,7 @@ class App extends React.Component {
     render() {
         return (
             <div class="container">
+                {/* <MetaMask {...this.props} {...this.state} setWeb3={this.setWeb3}/> */}
                 <br />
                 <RaceInfo data={this.state} fromWei={this.fromWei} onClick={this.withdraw}/>
                 <br />
@@ -710,16 +757,7 @@ class App extends React.Component {
                 <div class="tab-content" id="nav-tabContent">
                     <div class="tab-pane fade show active" id="nav-auction" role="tabpanel" aria-labelledby="nav-auction-tab">
                         <br />
-                        <Car carIndex="0" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="1" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="2" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        {/* <Car carIndex="3" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="4" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="5" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="6" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="7" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="8" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
-                        <Car carIndex="9" data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/> */}
+                        <Cars data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                     </div>
                     <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
                         <RaceSettings data={this.state} fromWei={this.fromWei} onClickStartAuction={this.startAuction} onClickCancelAuction={this.auctionCancel} setReward={this.onChangeReward} setContractAddress={this.setContractAddress} onClickAuctionEnd={this.onClickAuctionEnd} onClickRace={this.onClickRace}/>
@@ -812,6 +850,22 @@ class ChangeContractAdress extends React.Component {
                 </div>  
         )}
 
+}
+
+class Cars extends React.Component {
+
+    render(){
+        const carNumbers = [];
+        for (let i=0; i< this.props.data.maxCar; i++) carNumbers.push(i);
+        const Cars = carNumbers.map((index) =>
+            <Car carIndex={index} data={this.props.data} fromWei={this.props.fromWei} setBid={this.props.setBid} onClickBid={this.props.onClickBid} onClickUpgrade={this.props.onClickUpgrade}/>
+        );
+        return (
+            <div>
+                {Cars}
+            </div>
+        );
+    } 
 }
 
 class Car extends React.Component {
