@@ -514,7 +514,7 @@ class App extends React.Component {
     componentDidMount() {
         this.updateState()
         this.setupListeners()
-        setInterval(this.updateState.bind(this), 10e3)
+        setInterval(this.updateState.bind(this), 10e2)
     }
 
     updateUpgradesCount(){
@@ -552,14 +552,10 @@ class App extends React.Component {
     }
 
     upgradeCar = (index) => {
-        console.log(this.state.carUpgrades[index])
-        console.log(this.state.upgradePrice[this.state.carUpgrades[index]])
-        console.log(this.state.upgradePrice[this.state.carUpgrades[index]+1])
-        console.log(this.state.upgradePrice[this.state.carUpgrades[index]+2])
-        if (index < this.state.upgradesCount)
+        if (index < this.state.maxCar)
             if (this.state.carUpgrades[index] < this.state.upgradesCount)
             {
-                this.state.ContractInstance.getUpgradesPrice(index,(err, res) => { 
+                this.state.ContractInstance.getUpgradesPrice(this.state.carUpgrades[index],(err, res) => { 
                     let price = parseInt(res);
 
                     var functionData = this.state.ContractInstance.upgradeCar.getData(index);
@@ -573,7 +569,6 @@ class App extends React.Component {
                             console.log(error);
                         }
                     )                
-
                 })
             }
 
