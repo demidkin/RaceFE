@@ -34,7 +34,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0xCdeA89ae3c68d357a3179fBaa45DBfE0Da87959e";
+        this.contractAddress = "0xF0eEbe38d33fA8A71B32CdBFa9C1Bd3bfc650D8b";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -689,7 +689,7 @@ class App extends React.Component {
             console.log(err)
         })
     }
-
+    //todo: Сделать через Трансер, попбробовать заложить валуе 0
     onClickRace = () => {
         this.state.ContractInstance.race((err) => {
             console.log(err)
@@ -774,6 +774,7 @@ class App extends React.Component {
                 <nav>
                     <div class="nav nav-tabs" id="nav-tab" role="tablist">
                         <a class="nav-item nav-link active" id="nav-auction-tab" data-toggle="tab" href="#nav-auction" role="tab" aria-controls="nav-auction" aria-selected="true">Auction</a>
+                        <a class="nav-item nav-link" id="nav-help-tab" data-toggle="tab" href="#nav-help" role="tab" aria-controls="nav-help" aria-selected="true">Help</a>
                         <a class="nav-item nav-link" id="nav-settings-tab" data-toggle="tab" href="#nav-settings" role="tab" aria-controls="nav-settings" aria-selected="false">Settings</a>
                     </div>
                 </nav>
@@ -782,6 +783,10 @@ class App extends React.Component {
                         <br />
                         <Cars data={this.state} fromWei={this.fromWei} setBid={this.onChangeMyBids} onClickBid={this.bid} onClickUpgrade={this.upgradeCar}/>
                     </div>
+                    <div class="tab-pane fade" id="nav-help" role="tabpanel" aria-labelledby="nav-help-tab">
+                        <br />
+                        <Help />
+                    </div>                    
                     <div class="tab-pane fade" id="nav-settings" role="tabpanel" aria-labelledby="nav-settings-tab">
                         <RaceSettings data={this.state} fromWei={this.fromWei} onClickStartAuction={this.startAuction} onClickCancelAuction={this.auctionCancel} setReward={this.onChangeReward} setContractAddress={this.setContractAddress} onClickAuctionEnd={this.onClickAuctionEnd} onClickRace={this.onClickRace}/>
                     </div>
@@ -889,6 +894,35 @@ class Cars extends React.Component {
             </div>
         );
     } 
+}
+
+class Help extends React.Component {
+    render(){
+        return (
+    
+            <div class="card bg-light mb-3">
+                <div class="card-header">Инструкция</div>
+                <div class="card-body">
+                    <h5 class="card-title">Описание этапов</h5>
+                    <p class="card-text">Соревннования происходят в три этапа:</p>
+                    <p class="card-text"><u>1. Auction (Аукцион)</u> - для участия в соревнованиях на этом этапе Вы должны приобрести себе гоночную машину, 
+                        одну или несколько, стоимость выкупа автомобиля должна превышать его текущую стоимость.
+                        Пока идет аукцион любой желающий может перекупить Ваш автомобиль, необходимо контролировать, что автомобиль принадлежит Вам.
+                        Ваши машины выделены зеленым цветом. Если Ваш автомобиль перекупили, то Вы получаете назад свои средства, для этого необходимо 
+                        нажать кнопку "Забрать средства". Срок завершения аукциона указан в информации о контракте, после указанной даты ставки больше не принимаються,
+                        и фиксируются владельци автомобилей.
+                    </p>
+                    <p class="card-text"><u>2. PreparationForTheRace (Подготовка к гонке)</u> - на данном этап у вас есть возможность повысить свои шансы на победу. Для этого
+                        предусмотрена возможность улучшения мощьности автомобилей, шансы на победу увеличиваются соответственно:<br />
+                        &emsp;&emsp;<ui>Upgrade 1 - Увеличивает мощьность на 3%, стомиость 0.10 eth</ui><br />
+                        &emsp;&emsp;<ui>Upgrade 2 - Увеличивает мощьность на 4%, стомиость 0.15 eth</ui><br />
+                        &emsp;&emsp;<ui>Upgrade 3 - Увеличивает мощьность на 5%, стомиость 0.20 eth</ui><br />
+                    
+                    </p>
+                </div>
+            </div>
+        );
+    }      
 }
 
 class Car extends React.Component {
