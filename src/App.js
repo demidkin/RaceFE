@@ -34,7 +34,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0xF0eEbe38d33fA8A71B32CdBFa9C1Bd3bfc650D8b";
+        this.contractAddress = "0x533D20161ab6e7efF339b2908F4b5F873f7739f1";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -691,9 +691,17 @@ class App extends React.Component {
     }
     //todo: Сделать через Трансер, попбробовать заложить валуе 0
     onClickRace = () => {
-        this.state.ContractInstance.race((err) => {
-            console.log(err)
-        }) 
+            var functionData = this.state.ContractInstance.race.getData();
+            this.web3.eth.sendTransaction({
+                to: this.contractAddress,
+                from: this.web3.eth.accounts[0],
+                data: functionData,
+                value: this.web3.toWei(5, 'finney')
+            },
+                function (error) {
+                    console.log(error);
+                }
+            )
     }
     updateCarOwnerStatus() {
         let owners = this.state.mycars;
