@@ -22,7 +22,8 @@ class App extends React.Component {
             mycars: [],
             upgradesCount: 0,
             upgradePrice: [],
-            winner: 1000
+            winner: 1000,
+            OraclizePrice: 0
         }
 
         let web3 = window.web3
@@ -34,7 +35,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0x533D20161ab6e7efF339b2908F4b5F873f7739f1";
+        this.contractAddress = "0xd82C49487772Fa2884858FD1c0729afDA7C57528";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -75,19 +76,8 @@ class App extends React.Component {
         let abi = [
             {
                 "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "winner",
-                        "type": "uint256"
-                    },
-                    {
-                        "indexed": false,
-                        "name": "random",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "Winer",
+                "inputs": [],
+                "name": "ProofError",
                 "type": "event"
             },
             {
@@ -149,27 +139,27 @@ class App extends React.Component {
                 "type": "function"
             },
             {
-                "constant": false,
-                "inputs": [],
-                "name": "auctionStart",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "constant": false,
+                "anonymous": false,
                 "inputs": [
                     {
-                        "name": "carIndex",
+                        "indexed": false,
+                        "name": "winner",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "random",
                         "type": "uint256"
                     }
                 ],
-                "name": "bid",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "function"
+                "name": "Winer",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [],
+                "name": "AuctionCanceled",
+                "type": "event"
             },
             {
                 "anonymous": false,
@@ -194,18 +184,9 @@ class App extends React.Component {
                 "type": "event"
             },
             {
-                "constant": false,
-                "inputs": [],
-                "name": "race",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
                 "anonymous": false,
                 "inputs": [],
-                "name": "AuctionCanceled",
+                "name": "AuctionEnded",
                 "type": "event"
             },
             {
@@ -222,9 +203,24 @@ class App extends React.Component {
             },
             {
                 "anonymous": false,
-                "inputs": [],
-                "name": "AuctionEnded",
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "allCarsPower",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "AllCarsPower",
                 "type": "event"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "auctionStart",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
             },
             {
                 "constant": false,
@@ -234,7 +230,16 @@ class App extends React.Component {
                         "type": "uint256"
                     }
                 ],
-                "name": "upgradeCar",
+                "name": "bid",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "race",
                 "outputs": [],
                 "payable": true,
                 "stateMutability": "payable",
@@ -262,6 +267,20 @@ class App extends React.Component {
                 "payable": false,
                 "stateMutability": "nonpayable",
                 "type": "constructor"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {
+                        "name": "carIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "upgradeCar",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
             },
             {
                 "constant": false,
@@ -366,6 +385,20 @@ class App extends React.Component {
                 "constant": true,
                 "inputs": [],
                 "name": "getMaxCarValue",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getOraclizePrice",
                 "outputs": [
                     {
                         "name": "",
@@ -691,17 +724,20 @@ class App extends React.Component {
     }
     //todo: Сделать через Трансер, попбробовать заложить валуе 0
     onClickRace = () => {
+        if (this.state.OraclizePrice > 0){
             var functionData = this.state.ContractInstance.race.getData();
             this.web3.eth.sendTransaction({
                 to: this.contractAddress,
                 from: this.web3.eth.accounts[0],
                 data: functionData,
-                value: this.web3.toWei(5, 'finney')
+                value: this.state.OraclizePrice
             },
                 function (error) {
                     console.log(error);
                 }
             )
+        }
+
     }
     updateCarOwnerStatus() {
         let owners = this.state.mycars;
@@ -755,10 +791,13 @@ class App extends React.Component {
             this.setState({winner : parseInt(result)})
         })
     }
+    getOraclizePrice(){
+        this.state.ContractInstance.getOraclizePrice((err, result) => {
+            this.setState({OraclizePrice : parseInt(result)})
+        })
+    }
+
     updateState() {
-        //console.log(this.state.upgradePrice)
-        //console.log(this.upgradePrice)
-        //console.log(this.upgradesCount)
         this.updateContractStatus();
         this.updatePandingReturnValue();
         this.updateHighestBids();
@@ -766,7 +805,8 @@ class App extends React.Component {
         this.updateCarUpgradesAndPower();
         this.updateRewardValue();
         this.getWinner();
-        //this.updateUpgradesCount();
+        this.getOraclizePrice();
+        console.log(this.state.OraclizePrice)
     }
 
     setupListeners() {
