@@ -23,7 +23,8 @@ class App extends React.Component {
             upgradesCount: 0,
             upgradePrice: [],
             winner: 1000,
-            OraclizePrice: 0
+            OraclizePrice: 0,
+            allCarsPower :0
         }
 
         let web3 = window.web3
@@ -35,7 +36,7 @@ class App extends React.Component {
             this.web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"))
         }
 
-        this.contractAddress = "0xd82C49487772Fa2884858FD1c0729afDA7C57528";
+        this.contractAddress = "0x896F8Da27703F80e329E6822807EacF3830deeE4";
         const MyContract = web3.eth.contract(this.getAbi())
         this.state.ContractInstance = MyContract.at(this.contractAddress)
 
@@ -46,6 +47,7 @@ class App extends React.Component {
         this.updateDateStartRace();
         this.updateMaxCarValue();
         this.updateUpgradesCount();
+        this.getOraclizePrice();
 
     }
 
@@ -72,13 +74,45 @@ class App extends React.Component {
             this.setState({mycars: mc})
         })      
     }
+    
     getAbi(){
         let abi = [
             {
-                "anonymous": false,
+                "constant": true,
                 "inputs": [],
-                "name": "ProofError",
-                "type": "event"
+                "name": "getRewardValue",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "auctionCancel",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getRaceStartDate",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
             },
             {
                 "constant": false,
@@ -96,6 +130,95 @@ class App extends React.Component {
                 "outputs": [],
                 "payable": false,
                 "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getAllCarsPower",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
+                "name": "auctionEnd",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "index",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "getUpgradesPrice",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "carIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "isMyCar",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getUpgradesCount",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getAuctionEndDate",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
                 "type": "function"
             },
             {
@@ -123,103 +246,15 @@ class App extends React.Component {
             {
                 "constant": false,
                 "inputs": [],
-                "name": "auctionCancel",
-                "outputs": [],
+                "name": "withdraw",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
                 "payable": false,
                 "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [],
-                "name": "auctionEnd",
-                "outputs": [],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "winner",
-                        "type": "uint256"
-                    },
-                    {
-                        "indexed": false,
-                        "name": "random",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "Winer",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [],
-                "name": "AuctionCanceled",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "sender",
-                        "type": "address"
-                    },
-                    {
-                        "indexed": false,
-                        "name": "value",
-                        "type": "uint256"
-                    },
-                    {
-                        "indexed": false,
-                        "name": "carIndex",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "HighestBidIncreased",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [],
-                "name": "AuctionEnded",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "reward",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "AuctionStarted",
-                "type": "event"
-            },
-            {
-                "anonymous": false,
-                "inputs": [
-                    {
-                        "indexed": false,
-                        "name": "allCarsPower",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "AllCarsPower",
-                "type": "event"
-            },
-            {
-                "constant": false,
-                "inputs": [],
-                "name": "auctionStart",
-                "outputs": [],
-                "payable": true,
-                "stateMutability": "payable",
                 "type": "function"
             },
             {
@@ -239,6 +274,29 @@ class App extends React.Component {
             {
                 "constant": false,
                 "inputs": [],
+                "name": "auctionStart",
+                "outputs": [],
+                "payable": true,
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getMaxCarValue",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [],
                 "name": "race",
                 "outputs": [],
                 "payable": true,
@@ -246,27 +304,65 @@ class App extends React.Component {
                 "type": "function"
             },
             {
+                "constant": true,
                 "inputs": [
                     {
-                        "name": "_beneficiary",
-                        "type": "address"
-                    },
-                    {
-                        "name": "_auctionEndDate",
+                        "name": "carIndex",
                         "type": "uint256"
-                    },
+                    }
+                ],
+                "name": "getCarPower",
+                "outputs": [
                     {
-                        "name": "_raceStartDate",
-                        "type": "uint256"
-                    },
-                    {
-                        "name": "_maxCar",
+                        "name": "",
                         "type": "uint256"
                     }
                 ],
                 "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "constructor"
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getWinner",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getOraclizePrice",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "getPandingReturnValue",
+                "outputs": [
+                    {
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "view",
+                "type": "function"
             },
             {
                 "constant": false,
@@ -283,27 +379,18 @@ class App extends React.Component {
                 "type": "function"
             },
             {
-                "constant": false,
-                "inputs": [],
-                "name": "withdraw",
+                "constant": true,
+                "inputs": [
+                    {
+                        "name": "carIndex",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "myBidIsWin",
                 "outputs": [
                     {
                         "name": "",
                         "type": "bool"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getAuctionEndDate",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
                     }
                 ],
                 "payable": false,
@@ -318,7 +405,7 @@ class App extends React.Component {
                         "type": "uint256"
                     }
                 ],
-                "name": "getCarPower",
+                "name": "gethighestBid",
                 "outputs": [
                     {
                         "name": "",
@@ -363,178 +450,117 @@ class App extends React.Component {
                 "type": "function"
             },
             {
-                "constant": true,
+                "constant": false,
+                "inputs": [],
+                "name": "reset",
+                "outputs": [],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
                 "inputs": [
                     {
+                        "name": "_beneficiary",
+                        "type": "address"
+                    },
+                    {
+                        "name": "_auctionEndDate",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "_raceStartDate",
+                        "type": "uint256"
+                    },
+                    {
+                        "name": "_maxCar",
+                        "type": "uint256"
+                    }
+                ],
+                "payable": false,
+                "stateMutability": "nonpayable",
+                "type": "constructor"
+            },
+            {
+                "anonymous": false,
+                "inputs": [
+                    {
+                        "indexed": false,
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "value",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
                         "name": "carIndex",
                         "type": "uint256"
                     }
                 ],
-                "name": "gethighestBid",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "HighestBidIncreased",
+                "type": "event"
             },
             {
-                "constant": true,
+                "anonymous": false,
                 "inputs": [],
-                "name": "getMaxCarValue",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "AuctionEnded",
+                "type": "event"
             },
             {
-                "constant": true,
-                "inputs": [],
-                "name": "getOraclizePrice",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getPandingReturnValue",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getRaceStartDate",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getRewardValue",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "getUpgradesCount",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "constant": true,
+                "anonymous": false,
                 "inputs": [
                     {
-                        "name": "index",
+                        "indexed": false,
+                        "name": "reward",
                         "type": "uint256"
                     }
                 ],
-                "name": "getUpgradesPrice",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "AuctionStarted",
+                "type": "event"
             },
             {
-                "constant": true,
+                "anonymous": false,
                 "inputs": [],
-                "name": "getWinner",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "AuctionCanceled",
+                "type": "event"
             },
             {
-                "constant": true,
+                "anonymous": false,
                 "inputs": [
                     {
-                        "name": "carIndex",
+                        "indexed": false,
+                        "name": "winner",
+                        "type": "uint256"
+                    },
+                    {
+                        "indexed": false,
+                        "name": "random",
                         "type": "uint256"
                     }
                 ],
-                "name": "isMyCar",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "Winer",
+                "type": "event"
             },
             {
-                "constant": true,
+                "anonymous": false,
                 "inputs": [
                     {
-                        "name": "carIndex",
+                        "indexed": false,
+                        "name": "allCarsPower",
                         "type": "uint256"
                     }
                 ],
-                "name": "myBidIsWin",
-                "outputs": [
-                    {
-                        "name": "",
-                        "type": "bool"
-                    }
-                ],
-                "payable": false,
-                "stateMutability": "view",
-                "type": "function"
+                "name": "AllCarsPower",
+                "type": "event"
+            },
+            {
+                "anonymous": false,
+                "inputs": [],
+                "name": "ProofError",
+                "type": "event"
             }
         ]
         return abi
@@ -582,6 +608,7 @@ class App extends React.Component {
         this.updateDateStartRace();
         this.updateUpgradesCount();
         this.updateMaxCarValue();
+        this.getOraclizePrice();
     }
 
     upgradeCar = (index) => {
@@ -624,7 +651,7 @@ class App extends React.Component {
             //console.log("ContractStatus: " + parseInt(result));
             switch (parseInt(result)) {
                 case 0:
-                    this.setState({ ContractStatus: "Initsialising" })
+                    this.setState({ ContractStatus: "Initialising" })
                     break;
                 case 1:
                     this.setState({ ContractStatus: "Auction" })
@@ -795,6 +822,11 @@ class App extends React.Component {
         this.state.ContractInstance.getOraclizePrice((err, result) => {
             this.setState({OraclizePrice : parseInt(result)})
         })
+    }    
+    updateAllCarsPower(){
+        this.state.ContractInstance.getAllCarsPower((err, result) => {
+            this.setState({allCarsPower : parseInt(result)})
+        })
     }
 
     updateState() {
@@ -805,8 +837,8 @@ class App extends React.Component {
         this.updateCarUpgradesAndPower();
         this.updateRewardValue();
         this.getWinner();
-        this.getOraclizePrice();
-        console.log(this.state.OraclizePrice)
+        this.updateAllCarsPower();
+        
     }
 
     setupListeners() {
@@ -875,7 +907,7 @@ class RaceSettings extends React.Component {
                 <div class="input-group mb-3">
                     <input type="text" class="form-control" placeholder="Reward eth" aria-label="Reward eth" aria-describedby="basic-addon2" onChange={(e) => {this.props.setReward(e)}}></input>
                     <div class="input-group-append">
-                        <button class="btn btn-success btn-block" type="button" onClick={() => this.props.onClickStartAuction()} disabled={!(this.props.data.ContractStatus === 'Initsialising')}>Запустить аукцион</button>
+                        <button class="btn btn-success btn-block" type="button" onClick={() => this.props.onClickStartAuction()} disabled={!(this.props.data.ContractStatus === 'Initialising')}>Запустить аукцион</button>
                     </div>
                 </div>
                 <b>Награда победителю:</b> &nbsp;
@@ -996,6 +1028,9 @@ class Car extends React.Component {
                         <span>{parseInt(this.props.carIndex)+1}</span><br />
                         <b>Мощьность автомобиля: </b>&nbsp;
                         <span>{this.props.data.carPowers[this.props.carIndex] / 100} л\с</span><br />
+                        <b>Ваш шанс на победу: </b>&nbsp;
+                        <span>{
+                            Math.round((this.props.data.carPowers[this.props.carIndex] / this.props.data.allCarsPower) * 10000)/100} %</span><br />
                         <b>Текущая стоимость: </b>&nbsp;
                         <span>{this.props.data.highestBids[this.props.carIndex]} eth</span><br />
                         <b>Уровень апгрейдов: </b>&nbsp;
