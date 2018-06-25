@@ -1,4 +1,5 @@
 # RaceFE
 
+[Back-End](https://github.com/demidkin/Race)
 
-0x0113c2C2d8cb5b940384d648F3e44af04FD934ed, 1529429700, 1529430300, 3
+[Описание приложения](https://docs.google.com/presentation/d/1Gwmw9TYSzUbsghMcwzJ-4L1TzOo7RaSyoucQ6dYVyBg/edit?usp=sharing)
