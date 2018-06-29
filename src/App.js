@@ -6,7 +6,7 @@ import RaceInfo from './components/RaceInfo';
 import RaceSettings from './components/RaceSettings';
 import Cars from './components/Cars';
 import Help from './components/Help';
-import abi from './abi';
+import abi from './utils/abi';
 
 
 

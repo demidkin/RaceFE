@@ -1,11 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { fromWei } from '../utils/web3'
+import { withdraw } from '../actions/withdraw'
 
 class RaceInfo extends Component {
-    
-    withdraw() {
-        this.props.onWithdraw();
-    }
 
     render() {
         return (
@@ -19,10 +17,10 @@ class RaceInfo extends Component {
                         <b>Дата начала соревнований:</b> &nbsp;
                         <span>{this.props.data.RaceStartDate}</span><br />
                         <b>Награда победителю:</b>&nbsp;
-                        <span>{this.props.fromWei(this.props.data.ContractReward, 'ether')}</span><br />
+                        <span>{fromWei(this.props.data.ContractReward)}</span><br />
                         <b>Ваш невыплаченный баланс:</b>&nbsp;
-                        <span>{this.props.fromWei(this.props.data.pendingReturn, 'ether')}</span> &nbsp;
-                        <button class="btn btn-warning" type="button" onClick={this.withdraw.bind(this)}>Забрать средства</button>
+                        <span>{fromWei(this.props.data.pendingReturn)}</span> &nbsp;
+                        <button class="btn btn-warning" type="button" onClick={this.props.onWithdraw}>Забрать средства</button>
                     </div>
                 </div>
         )}
@@ -30,11 +28,10 @@ class RaceInfo extends Component {
 
 export default connect(
     state => ({
-        testStore: state
     }),
     dispatch => ({
         onWithdraw: () => {
-            dispatch({ type: 'WITHDRAW'})
+            dispatch(withdraw())
         }
     })
 )(RaceInfo);
